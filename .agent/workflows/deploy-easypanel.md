@@ -32,12 +32,14 @@ Klik pada service Web App tadi, buka tab **"Environment"**, dan masukkan variabe
 | `SESSION_SECRET` | `sesuatu-yang-panjang-dan-unik` | Minimal 32 karakter |
 | `ADMIN_PASSWORD` | `password-admin-anda` | Password untuk dashboard |
 
-## 5. Deployment Setting (Nixpacks)
+## 5. Deployment Setting
 Buka tab **"Build"** pada service Web App:
-1. Pastikan **Build Pack** diatur ke **Nixpacks**.
-2. Tambahkan perintah prek-instal jika diperlukan untuk Prisma:
-   - **Installation Command**: `npm install && npx prisma generate`
-   - **Build Command**: `npm run build`
+1. Pastikan **Build Pack** diatur ke **Dockerfile** (Easypanel akan otomatis mendeteksi file `Dockerfile` yang baru saja saya buat).
+2. Sistem akan otomatis menjalankan:
+   - Instalasi `openssl` (untuk Prisma).
+   - `npm install`
+   - `npx prisma generate`
+   - `npm run build`
 
 ## 6. Jalankan Deployment
 Klik tombol **"Deploy"** di bagian atas service Web App. Easypanel akan melakukan build image dan menjalankan container.
