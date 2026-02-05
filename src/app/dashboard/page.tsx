@@ -9,7 +9,7 @@ export default async function AdminDashboard() {
 
     const stats = [
         { label: "Total Products", value: totalProducts || 0, icon: <Package size={24} />, color: "#6366f1" },
-        { label: "Total Orders", value: orders.length || 0, icon: <ShoppingCart size={24} />, color: "#10b981" },
+        { label: "Total Orders", value: orders.totalItems || 0, icon: <ShoppingCart size={24} />, color: "#10b981" },
         { label: "Recent Sync", value: "Live", icon: <TrendingUp size={24} />, color: "#a855f7" },
     ];
 
