@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { getProducts } from "@/app/actions/products";
 import { Package, ExternalLink, ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
