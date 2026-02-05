@@ -13,6 +13,9 @@ const rubik = Rubik({
 export const metadata: Metadata = {
   title: "Ichibot Store - Official",
   description: "Mirroring WooCommerce with speed and style in Light Theme.",
+  icons: {
+    icon: "/icon.png",
+  },
 };
 
 export default function RootLayout({

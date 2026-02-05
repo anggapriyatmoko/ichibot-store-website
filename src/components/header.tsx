@@ -79,12 +79,7 @@ export default function Header() {
                     ICHIBOT STORE
                 </h1>
 
-                <div style={{ display: 'flex', gap: '1.5rem' }}>
-                    <a href="/" style={{ fontSize: '0.9rem', fontWeight: 600, color: '#475569' }}>Home</a>
-                    {user?.isAdmin && (
-                        <a href="/dashboard" style={{ fontSize: '0.9rem', fontWeight: 600, color: '#475569' }}>Dashboard</a>
-                    )}
-                </div>
+
             </div>
 
             <div style={{ flex: 1, maxWidth: '600px' }}>

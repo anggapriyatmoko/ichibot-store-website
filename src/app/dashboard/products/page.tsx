@@ -1,11 +1,25 @@
 import { getProducts } from "@/app/actions/products";
 import { Package, ExternalLink, ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
+import ProductSearchFilter from "@/components/dashboard/product-search-filter";
+import { Suspense } from "react";
 
-export default async function AdminProducts({ searchParams }: { searchParams: Promise<{ page?: string }> }) {
+export default async function AdminProducts({ searchParams }: { searchParams: Promise<{ page?: string; search?: string; per_page?: string }> }) {
     const sp = await searchParams;
     const page = parseInt(sp.page || "1");
-    const { products, total, totalPages } = await getProducts(undefined, page, 20);
+    const search = sp.search || "";
+    const perPage = parseInt(sp.per_page || "10");
+
+    const { products, total, totalPages } = await getProducts(search, page, perPage);
+
+    // Build base URL for pagination that preserves search and limit
+    const getPageUrl = (p: number) => {
+        const params = new URLSearchParams();
+        if (search) params.set("search", search);
+        if (perPage !== 10) params.set("per_page", perPage.toString());
+        params.set("page", p.toString());
+        return `/dashboard/products?${params.toString()}`;
+    };
 
     return (
         <div className="animate-fade-in">
@@ -16,6 +30,16 @@ export default async function AdminProducts({ searchParams }: { searchParams: Pr
                     <p style={{ color: '#64748b', fontSize: '0.85rem' }}>Halaman {page} dari {totalPages}</p>
                 </div>
             </div>
+
+            <Suspense fallback={<div style={{ height: '50px', background: '#f8fafc', borderRadius: '0.75rem', marginBottom: '1.5rem' }} />}>
+                <ProductSearchFilter />
+            </Suspense>
+
+            {search && (
+                <p style={{ marginBottom: '1rem', color: '#64748b', fontSize: '0.9rem' }}>
+                    Hasil pencarian untuk: <strong style={{ color: 'var(--primary)' }}>"{search}"</strong>
+                </p>
+            )}
 
             <div className="glass" style={{ borderRadius: '1rem', overflow: 'hidden', marginBottom: '2rem' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
@@ -34,7 +58,11 @@ export default async function AdminProducts({ searchParams }: { searchParams: Pr
                                 <td style={{ padding: '1rem' }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                                         <div style={{ width: '40px', height: '40px', borderRadius: '0.5rem', background: '#f1f5f9', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                            {product.images?.[0] ? <img src={product.images[0].src} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <Package size={20} color="#cbd5e1" />}
+                                            {product.images?.[0] ? (
+                                                <img src={product.images[0].src} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                            ) : (
+                                                <Package size={20} color="#cbd5e1" />
+                                            )}
                                         </div>
                                         <span style={{ fontWeight: 500 }}>{product.name}</span>
                                     </div>
@@ -61,7 +89,7 @@ export default async function AdminProducts({ searchParams }: { searchParams: Pr
                             </tr>
                         )) : (
                             <tr>
-                                <td colSpan={5} style={{ padding: '3rem', textAlign: 'center', color: '#64748b' }}>No products found in WooCommerce.</td>
+                                <td colSpan={5} style={{ padding: '3rem', textAlign: 'center', color: '#64748b' }}>No products found matching your criteria.</td>
                             </tr>
                         )}
                     </tbody>
@@ -72,7 +100,7 @@ export default async function AdminProducts({ searchParams }: { searchParams: Pr
             {totalPages > 1 && (
                 <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '1rem', padding: '1rem 0' }}>
                     <Link
-                        href={`/dashboard/products?page=${Math.max(1, page - 1)}`}
+                        href={getPageUrl(Math.max(1, page - 1))}
                         style={{
                             display: 'flex',
                             alignItems: 'center',
@@ -94,12 +122,11 @@ export default async function AdminProducts({ searchParams }: { searchParams: Pr
                     <div style={{ display: 'flex', gap: '0.5rem' }}>
                         {[...Array(totalPages)].map((_, i) => {
                             const p = i + 1;
-                            // Show only limited number of pages if too many
                             if (p === 1 || p === totalPages || (p >= page - 2 && p <= page + 2)) {
                                 return (
                                     <Link
                                         key={p}
-                                        href={`/dashboard/products?page=${p}`}
+                                        href={getPageUrl(p)}
                                         style={{
                                             width: '36px',
                                             height: '36px',
@@ -126,7 +153,7 @@ export default async function AdminProducts({ searchParams }: { searchParams: Pr
                     </div>
 
                     <Link
-                        href={`/dashboard/products?page=${Math.min(totalPages, page + 1)}`}
+                        href={getPageUrl(Math.min(totalPages, page + 1))}
                         style={{
                             display: 'flex',
                             alignItems: 'center',
@@ -149,4 +176,3 @@ export default async function AdminProducts({ searchParams }: { searchParams: Pr
         </div>
     );
 }
-

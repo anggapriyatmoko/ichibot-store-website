@@ -1,17 +1,18 @@
 "use server";
 
-import fs from "fs/promises";
-import path from "path";
 import { revalidatePath } from "next/cache";
-
-const USERS_FILE = path.join(process.cwd(), "src/data/users.json");
+import prisma from "@/lib/prisma";
+import bcrypt from "bcryptjs";
 
 export async function getUsers() {
     try {
-        const data = await fs.readFile(USERS_FILE, "utf-8");
-        return JSON.parse(data);
+        return await prisma.user.findMany({
+            orderBy: {
+                createdAt: 'desc'
+            }
+        });
     } catch (error) {
-        console.error("Error reading users:", error);
+        console.error("Error fetching users:", error);
         return [];
     }
 }
@@ -20,26 +21,46 @@ export async function addUser(formData: FormData) {
     try {
         const username = formData.get("username") as string;
         const displayName = formData.get("displayName") as string;
-        const role = formData.get("role") as 'admin' | 'user';
+        const role = formData.get("role") as string;
         const email = formData.get("email") as string;
+        const password = formData.get("password") as string;
+        const pin = formData.get("pin") as string;
 
-        const users = await getUsers();
-
-        // Simple check to avoid duplicates
-        if (users.find((u: any) => u.username === username)) {
-            return { success: false, error: "Username already exists" };
+        // Validation for PIN if provided
+        if (pin && !/^\d{6}$/.test(pin)) {
+            return { success: false, error: "PIN harus 6 digit angka" };
         }
 
-        const newUser = {
-            id: Date.now().toString(),
-            username,
-            displayName,
-            role,
-            email
-        };
+        // Check for duplicates
+        const existingUser = await prisma.user.findFirst({
+            where: {
+                OR: [
+                    { username },
+                    { email }
+                ]
+            }
+        });
 
-        const updatedUsers = [...users, newUser];
-        await fs.writeFile(USERS_FILE, JSON.stringify(updatedUsers, null, 2));
+        if (existingUser) {
+            return {
+                success: false,
+                error: existingUser.username === username ? "Username already exists" : "Email already exists"
+            };
+        }
+
+        const hashedPassword = password ? await bcrypt.hash(password, 10) : null;
+        const hashedPin = pin ? await bcrypt.hash(pin, 10) : null;
+
+        await prisma.user.create({
+            data: {
+                username,
+                displayName,
+                role,
+                email,
+                password: hashedPassword,
+                pin: hashedPin
+            }
+        });
 
         revalidatePath("/dashboard/users");
         return { success: true };
@@ -51,15 +72,70 @@ export async function addUser(formData: FormData) {
 
 export async function deleteUser(id: string) {
     try {
-        const users = await getUsers();
-        const updatedUsers = users.filter((u: any) => u.id !== id);
-
-        await fs.writeFile(USERS_FILE, JSON.stringify(updatedUsers, null, 2));
+        await prisma.user.delete({
+            where: { id }
+        });
 
         revalidatePath("/dashboard/users");
         return { success: true };
     } catch (error) {
         console.error("Error deleting user:", error);
         return { success: false, error: "Failed to delete user" };
+    }
+}
+
+export async function updateUser(id: string, formData: FormData) {
+    try {
+        const displayName = formData.get("displayName") as string;
+        const role = formData.get("role") as string;
+        const email = formData.get("email") as string;
+        const password = formData.get("password") as string;
+        const pin = formData.get("pin") as string;
+
+        // Validation for PIN if provided
+        if (pin && !/^\d{6}$/.test(pin)) {
+            return { success: false, error: "PIN harus 6 digit angka" };
+        }
+
+        // Check if email already exists for another user
+        const existingEmailUser = await prisma.user.findFirst({
+            where: {
+                email,
+                NOT: { id }
+            }
+        });
+
+        if (existingEmailUser) {
+            return { success: false, error: "Email already exists" };
+        }
+
+        const updateData: any = {
+            displayName,
+            role,
+            email,
+        };
+
+        if (password) {
+            updateData.password = await bcrypt.hash(password, 10);
+        }
+
+        if (pin) {
+            updateData.pin = await bcrypt.hash(pin, 10);
+        }
+
+        await prisma.user.update({
+            where: { id },
+            data: updateData
+        });
+
+        revalidatePath("/dashboard/users");
+        return { success: true };
+    } catch (error: any) {
+        console.error("Error updating user:", error);
+        // Provide more details if it's a known Prisma error
+        if (error.code === 'P2002') {
+            return { success: false, error: "Unique constraint failed" };
+        }
+        return { success: false, error: error.message || "Failed to update user" };
     }
 }

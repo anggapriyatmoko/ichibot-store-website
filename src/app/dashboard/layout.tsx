@@ -17,6 +17,8 @@ import AdminNavLink from "@/components/admin-nav-link";
 import { useEffect, useState } from "react";
 import { getSession, logout } from "@/app/actions/auth";
 import Image from "next/image";
+import Link from "next/link";
+import ProfileMenu from "@/components/profile-menu";
 
 export default function AdminLayout({
     children,
@@ -61,7 +63,7 @@ export default function AdminLayout({
             <aside className={`admin-sidebar ${isCollapsed ? 'collapsed' : ''}`}>
                 <div className="admin-sidebar-header">
                     {!isCollapsed && (
-                        <div style={{ position: 'relative', width: '120px', height: '32px' }}>
+                        <Link href="/" style={{ position: 'relative', width: '120px', height: '32px', display: 'block' }}>
                             <Image
                                 src="/ichibot-logo.png"
                                 alt="ICHIBOT"
@@ -69,7 +71,7 @@ export default function AdminLayout({
                                 style={{ objectFit: 'contain' }}
                                 priority
                             />
-                        </div>
+                        </Link>
                     )}
                     <button
                         onClick={() => setIsCollapsed(!isCollapsed)}
@@ -109,32 +111,6 @@ export default function AdminLayout({
                     )}
                 </div>
 
-                <div style={{ marginTop: 'auto', padding: '1rem 0', borderTop: '1px solid #f1f5f9' }}>
-                    <form action={logout}>
-                        <button
-                            type="submit"
-                            style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: isCollapsed ? '0' : '0.75rem',
-                                color: '#ef4444',
-                                fontSize: '0.9rem',
-                                fontWeight: 600,
-                                padding: isCollapsed ? '0.8rem 0' : '0.75rem 1.25rem',
-                                margin: '0.15rem 0.75rem',
-                                borderRadius: '0.5rem',
-                                width: isCollapsed ? 'auto' : 'calc(100% - 1.5rem)',
-                                transition: 'all 0.2s',
-                                justifyContent: isCollapsed ? 'center' : 'flex-start'
-                            }}
-                            onMouseEnter={(e) => e.currentTarget.style.background = '#fef2f2'}
-                            onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-                        >
-                            <LogOut size={18} />
-                            {!isCollapsed && <span>Logout</span>}
-                        </button>
-                    </form>
-                </div>
             </aside>
 
             {/* Main Content */}
@@ -146,27 +122,11 @@ export default function AdminLayout({
                         <span>{currentTime}</span>
                     </div>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-                        <div style={{ textAlign: 'right', borderRight: '1px solid #f1f5f9', paddingRight: '1.5rem' }}>
-                            <p style={{ fontSize: '0.85rem', fontWeight: 700, color: '#1e293b' }}>{user?.username || 'Guest'}</p>
-                            <p style={{ fontSize: '0.7rem', fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase' }}>
-                                {user?.role === 'admin' ? 'Administrator' : 'Customer'}
-                            </p>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: '#f1f5f9', padding: '0.4rem 0.8rem', borderRadius: '2rem' }}>
+                            <Bell size={18} color="#64748b" />
                         </div>
-                        <div style={{
-                            width: '36px',
-                            height: '36px',
-                            borderRadius: '50%',
-                            background: '#eef2ff',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            color: '#2563eb',
-                            fontWeight: 700,
-                            fontSize: '0.9rem'
-                        }}>
-                            {user?.username?.charAt(0).toUpperCase() || 'A'}
-                        </div>
+                        <ProfileMenu user={user} />
                     </div>
                 </header>
 

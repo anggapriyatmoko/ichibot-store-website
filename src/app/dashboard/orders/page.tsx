@@ -1,72 +1,134 @@
-export const dynamic = "force-dynamic";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import Link from "next/link";
 import { getOrders } from "@/app/actions/orders";
-import { ShoppingBag } from "lucide-react";
+import OrderList from "@/components/orders/order-list";
 
-export default async function AdminOrders() {
-    const orders = await getOrders();
+interface PageProps {
+    searchParams: Promise<{ page?: string; per_page?: string }>;
+}
+
+export default async function AdminOrders({ searchParams }: PageProps) {
+    const params = await searchParams;
+    const currentPage = parseInt(params.page || "1");
+    const perPage = parseInt(params.per_page || "10");
+
+    const { data: orders, totalItems, totalPages } = await getOrders(currentPage, perPage);
+
+    const perPageOptions = [10, 50, 100];
 
     return (
         <div className="animate-fade-in">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-                <h2 style={{ fontSize: '1.8rem', fontWeight: 700 }}>Orders Mirror</h2>
-                <p style={{ color: '#64748b', fontSize: '0.9rem' }}>Showing {orders.length} recent orders</p>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
+                <div>
+                    <h2 style={{ fontSize: '1.8rem', fontWeight: 700 }}>Orders Mirror</h2>
+                    <p style={{ color: '#64748b', fontSize: '0.9rem' }}>
+                        Showing {orders.length > 0 ? (currentPage - 1) * perPage + 1 : 0} - {Math.min(currentPage * perPage, totalItems)} of {totalItems} total orders
+                    </p>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <span style={{ fontSize: '0.85rem', color: '#64748b' }}>Show:</span>
+                    <div style={{ display: 'flex', background: 'white', borderRadius: '0.5rem', border: '1px solid var(--border)', overflow: 'hidden' }}>
+                        {perPageOptions.map(option => (
+                            <Link
+                                key={option}
+                                href={`/dashboard/orders?page=1&per_page=${option}`}
+                                style={{
+                                    padding: '0.4rem 0.8rem',
+                                    fontSize: '0.85rem',
+                                    color: perPage === option ? 'white' : '#64748b',
+                                    background: perPage === option ? 'var(--primary)' : 'transparent',
+                                    textDecoration: 'none',
+                                    fontWeight: 600,
+                                    borderRight: option === 100 ? 'none' : '1px solid var(--border)',
+                                    transition: 'all 0.2s'
+                                }}
+                            >
+                                {option}
+                            </Link>
+                        ))}
+                    </div>
+                </div>
             </div>
 
-            <div className="glass" style={{ borderRadius: '1rem', overflow: 'hidden' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-                    <thead>
-                        <tr style={{ borderBottom: '1px solid var(--border)', background: 'rgba(255, 255, 255, 0.02)' }}>
-                            <th style={{ padding: '1rem', fontWeight: 600 }}>Order ID</th>
-                            <th style={{ padding: '1rem', fontWeight: 600 }}>Customer</th>
-                            <th style={{ padding: '1rem', fontWeight: 600 }}>Status</th>
-                            <th style={{ padding: '1rem', fontWeight: 600 }}>Total</th>
-                            <th style={{ padding: '1rem', fontWeight: 600 }}>Date</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {orders.length > 0 ? orders.map((order: any) => (
-                            <tr key={order.id} style={{ borderBottom: '1px solid var(--border)' }}>
-                                <td style={{ padding: '1rem', fontWeight: 600 }}>#{order.id}</td>
-                                <td style={{ padding: '1rem' }}>
-                                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                        <span>{order.billing?.first_name} {order.billing?.last_name}</span>
-                                        <span style={{ fontSize: '0.8rem', color: '#64748b' }}>{order.billing?.email}</span>
-                                    </div>
-                                </td>
-                                <td style={{ padding: '1rem' }}>
-                                    <span style={{
-                                        padding: '0.2rem 0.6rem',
-                                        borderRadius: '1rem',
-                                        fontSize: '0.75rem',
-                                        background: getStatusColor(order.status).bg,
-                                        color: getStatusColor(order.status).text,
-                                        textTransform: 'capitalize'
-                                    }}>
-                                        {order.status}
-                                    </span>
-                                </td>
-                                <td style={{ padding: '1rem', fontWeight: 600 }}>Rp {parseInt(order.total).toLocaleString()}</td>
-                                <td style={{ padding: '1rem', color: '#94a3b8', fontSize: '0.9rem' }}>
-                                    {new Date(order.date_created).toLocaleDateString()}
-                                </td>
-                            </tr>
-                        )) : (
-                            <tr>
-                                <td colSpan={5} style={{ padding: '3rem', textAlign: 'center', color: '#64748b' }}>No orders found in WooCommerce.</td>
-                            </tr>
-                        )}
-                    </tbody>
-                </table>
-            </div>
+            <OrderList orders={orders} />
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem', marginTop: '1rem' }}>
+                    <Link
+                        href={`/dashboard/orders?page=${Math.max(1, currentPage - 1)}&per_page=${perPage}`}
+                        style={{
+                            padding: '0.5rem',
+                            borderRadius: '0.5rem',
+                            background: 'white',
+                            border: '1px solid var(--border)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            opacity: currentPage === 1 ? 0.5 : 1,
+                            pointerEvents: currentPage === 1 ? 'none' : 'auto',
+                            color: '#1e293b'
+                        }}
+                    >
+                        <ChevronLeft size={20} />
+                    </Link>
+
+                    <div style={{ display: 'flex', gap: '0.25rem' }}>
+                        {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                            // Show a window of pages around current page
+                            let pageNum = currentPage;
+                            if (currentPage <= 3) pageNum = i + 1;
+                            else if (currentPage >= totalPages - 2) pageNum = totalPages - 4 + i;
+                            else pageNum = currentPage - 2 + i;
+
+                            if (pageNum < 1 || pageNum > totalPages) return null;
+
+                            return (
+                                <Link
+                                    key={pageNum}
+                                    href={`/dashboard/orders?page=${pageNum}&per_page=${perPage}`}
+                                    style={{
+                                        minWidth: '2.5rem',
+                                        height: '2.5rem',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        borderRadius: '0.5rem',
+                                        background: currentPage === pageNum ? 'var(--primary)' : 'white',
+                                        color: currentPage === pageNum ? 'white' : '#475569',
+                                        border: '1px solid var(--border)',
+                                        textDecoration: 'none',
+                                        fontWeight: 600,
+                                        fontSize: '0.9rem',
+                                        transition: 'all 0.2s'
+                                    }}
+                                >
+                                    {pageNum}
+                                </Link>
+                            );
+                        })}
+                    </div>
+
+                    <Link
+                        href={`/dashboard/orders?page=${Math.min(totalPages, currentPage + 1)}&per_page=${perPage}`}
+                        style={{
+                            padding: '0.5rem',
+                            borderRadius: '0.5rem',
+                            background: 'white',
+                            border: '1px solid var(--border)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            opacity: currentPage === totalPages ? 0.5 : 1,
+                            pointerEvents: currentPage === totalPages ? 'none' : 'auto',
+                            color: '#1e293b'
+                        }}
+                    >
+                        <ChevronRight size={20} />
+                    </Link>
+                </div>
+            )}
         </div>
     );
 }
 
-function getStatusColor(status: string) {
-    switch (status) {
-        case 'completed': return { bg: 'rgba(16, 185, 129, 0.1)', text: '#10b981' };
-        case 'processing': return { bg: 'rgba(59, 130, 246, 0.1)', text: '#3b82f6' };
-        case 'pending': return { bg: 'rgba(245, 158, 11, 0.1)', text: '#f59e0b' };
-        default: return { bg: 'rgba(148, 163, 184, 0.1)', text: '#94a3b8' };
-    }
-}
+

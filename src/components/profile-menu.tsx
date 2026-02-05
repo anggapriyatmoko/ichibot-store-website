@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { User, LogOut, Settings, ChevronDown } from "lucide-react";
+import { User, LogOut, Settings, ChevronDown, LayoutDashboard } from "lucide-react";
+import Link from "next/link";
 import { logout } from "@/app/actions/auth";
 
 export default function ProfileMenu({ user }: { user: any }) {
@@ -74,19 +75,42 @@ export default function ProfileMenu({ user }: { user: any }) {
                 }}>
                     <div style={{ padding: '0.75rem 1rem', borderBottom: '1px solid #f1f5f9', marginBottom: '0.5rem' }}>
                         <p style={{ fontSize: '0.85rem', fontWeight: 700, color: '#1e293b' }}>
-                            {user?.role === 'admin' ? 'Administrator' : user?.role === 'user' ? 'Customer' : 'Guest'}
+                            {user?.username || 'Guest'}
                         </p>
                         <p style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
-                            {user?.role === 'admin' ? 'admin@ichibot.id' : 'user@ichibot.id'}
+                            {user?.email || (user?.role === 'admin' ? 'admin@ichibot.id' : 'guest@ichibot.id')}
                         </p>
                     </div>
 
-                    <button
-                        onClick={() => {
-                            setIsOpen(false);
-                            // Placeholder for edit profile
-                            alert("Fitur Edit Profil akan segera hadir!");
-                        }}
+                    {user && (
+                        <Link
+                            href="/dashboard"
+                            onClick={() => setIsOpen(false)}
+                            style={{
+                                width: '100%',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.75rem',
+                                padding: '0.6rem 1rem',
+                                borderRadius: '0.5rem',
+                                color: '#475569',
+                                fontSize: '0.9rem',
+                                fontWeight: 500,
+                                cursor: 'pointer',
+                                textAlign: 'left',
+                                textDecoration: 'none'
+                            }}
+                            onMouseEnter={(e) => e.currentTarget.style.background = '#f8fafc'}
+                            onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                        >
+                            <LayoutDashboard size={16} />
+                            Dashboard
+                        </Link>
+                    )}
+
+                    <Link
+                        href="/dashboard/profile"
+                        onClick={() => setIsOpen(false)}
                         style={{
                             width: '100%',
                             display: 'flex',
@@ -98,14 +122,15 @@ export default function ProfileMenu({ user }: { user: any }) {
                             fontSize: '0.9rem',
                             fontWeight: 500,
                             cursor: 'pointer',
-                            textAlign: 'left'
+                            textAlign: 'left',
+                            textDecoration: 'none'
                         }}
                         onMouseEnter={(e) => e.currentTarget.style.background = '#f8fafc'}
                         onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                     >
                         <Settings size={16} />
                         Edit Profil
-                    </button>
+                    </Link>
 
                     <form action={logout}>
                         <button

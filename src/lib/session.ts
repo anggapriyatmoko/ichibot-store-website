@@ -2,6 +2,7 @@ import { SessionOptions } from "iron-session";
 
 export interface SessionData {
     username?: string;
+    email?: string;
     role?: 'admin' | 'user';
     isAdmin: boolean;
 }
